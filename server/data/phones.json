@@ -1,5 +1,29 @@
 [
   {
+    "id": "phone-1789507275061",
+    "title": "asdasd",
+    "brand": "Apple",
+    "model": "",
+    "price": 50000,
+    "status": "İkinci El",
+    "isSold": false,
+    "storage": "128 GB",
+    "ram": "8 GB",
+    "color": "",
+    "batteryHealth": null,
+    "warrantyStatus": "1 Yıl Garantili",
+    "accessories": [
+      "Orijinal Kutu",
+      "Fatura var"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80"
+    ],
+    "description": "",
+    "createdAt": "2026-09-15T21:21:15.061Z",
+    "views": 0
+  },
+  {
     "id": "phone-1",
     "title": "iPhone 15 Pro Max 256GB Naturel Titanyum - Sıfır Ayarında Kutulu",
     "brand": "Apple",

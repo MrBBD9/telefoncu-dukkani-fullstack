@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Check, Trash2, Calculator, ArrowRight } from 'lucide-react';
+import { X, DollarSign, Check, Trash2 } from 'lucide-react';
 import { api } from '../../services/api';
 
 export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
-  const [costPrice, setCostPrice] = useState(
-    phone && phone.costPrice !== undefined && phone.costPrice !== null ? String(phone.costPrice) : ''
-  );
+  const [costPrice, setCostPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (phone) {
+      setCostPrice(phone.costPrice !== undefined && phone.costPrice !== null ? String(phone.costPrice) : '');
+      setError('');
+    }
+  }, [phone]);
 
   if (!phone) return null;
 
@@ -24,7 +29,7 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setError('');
     setLoading(true);
 
@@ -35,14 +40,15 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
         costPrice: payloadCost
       });
 
-      if (res.success) {
+      if (res && res.success) {
         onSuccess();
         onClose();
       } else {
-        setError(res.message || 'Alış fiyatı kaydedilemedi.');
+        setError((res && res.message) || 'Alış fiyatı kaydedilemedi. Lütfen oturumunuzu kontrol edin.');
       }
     } catch (err) {
-      setError('Sunucu hatası oluştu.');
+      console.error('Update cost price error:', err);
+      setError('Sunucu hatası oluştu. Bağlantınızı kontrol edin.');
     } finally {
       setLoading(false);
     }
@@ -51,16 +57,17 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
   const handleClearCost = async () => {
     if (!window.confirm('Bu ilanın alış fiyatını silip boş bırakmak istediğinize emin misiniz? (Kâr grafiğinden çıkarılacaktır)')) return;
     setLoading(true);
+    setError('');
     try {
       const res = await api.updatePhone(phone.id, {
         costPrice: null
       });
 
-      if (res.success) {
+      if (res && res.success) {
         onSuccess();
         onClose();
       } else {
-        setError(res.message || 'Alış fiyatı temizlenemedi.');
+        setError((res && res.message) || 'Alış fiyatı temizlenemedi.');
       }
     } catch (err) {
       setError('Sunucu hatası oluştu.');
@@ -81,7 +88,7 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
             </div>
             <div>
               <h2 className="text-sm font-black text-gray-900">Alış Fiyatı (Maliyet) Gir</h2>
-              <p className="text-[11px] text-gray-500 font-medium">Hızlı kâr & ciro hesabı güncelleme</p>
+              <p className="text-[11px] text-gray-500 font-medium">Kâr & ciro hesabı için maliyet tutarı</p>
             </div>
           </div>
           <button
@@ -96,8 +103,8 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
         <form onSubmit={handleSave} className="p-5 space-y-4 text-xs">
           
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-semibold">
-              {error}
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-semibold leading-relaxed">
+              ⚠️ {error}
             </div>
           )}
 
@@ -122,26 +129,26 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
           {/* Cost Price Input Field */}
           <div>
             <label className="block font-bold text-gray-800 mb-1 flex items-center justify-between">
-              <span>Alış Fiyatı (Maliyet Tutarınız) (TL) *</span>
-              {phone.costPrice && (
+              <span>Alış Fiyatı (Maliyet Tutarınız) (TL)</span>
+              {phone.costPrice !== null && phone.costPrice !== undefined && phone.costPrice !== '' && (
                 <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                   Mevcut: {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(phone.costPrice)}
                 </span>
               )}
             </label>
+
             <input
               type="number"
-              required
               autoFocus
               value={costPrice}
               onChange={(e) => setCostPrice(e.target.value)}
-              placeholder="Örn: 48000"
+              placeholder="Örn: 48000 (Maliyeti temizlemek için boş bırakabilirsiniz)"
               className="w-full px-3.5 py-2.5 bg-emerald-50/50 border-2 border-emerald-400 rounded-xl text-sm font-black text-emerald-900 focus:outline-none focus:border-emerald-600 focus:bg-white shadow-sm"
             />
 
             {/* Quick Estimator Pills */}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] text-gray-500 font-semibold mr-1">Hızlı Tahmini Maliyet:</span>
+              <span className="text-[10px] text-gray-500 font-semibold mr-1">Hızlı Maliyet Hesabı:</span>
               {[10, 15, 20, 25].map(pct => {
                 const est = Math.round(sellingPrice * (1 - pct / 100));
                 return (
@@ -149,7 +156,7 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
                     type="button"
                     key={pct}
                     onClick={() => handleQuickPercent(pct)}
-                    className="px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 hover:text-emerald-800 text-[10px] font-bold text-gray-700 border border-gray-200 transition-colors"
+                    className="px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 hover:text-emerald-800 text-[10px] font-bold text-gray-700 border border-gray-200 transition-colors cursor-pointer"
                   >
                     -%{pct} ({Math.round(est / 1000)}k)
                   </button>
@@ -185,12 +192,12 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
 
           {/* Buttons */}
           <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-2">
-            {phone.costPrice ? (
+            {phone.costPrice !== null && phone.costPrice !== undefined ? (
               <button
                 type="button"
                 onClick={handleClearCost}
                 disabled={loading}
-                className="px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs transition-colors flex items-center gap-1"
+                className="px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                 title="Alış Fiyatını Boş Bırak"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -202,7 +209,7 @@ export default function QuickCostPriceModal({ phone, onClose, onSuccess }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3.5 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold text-xs transition-colors"
+                className="px-3.5 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold text-xs transition-colors cursor-pointer"
               >
                 İptal
               </button>
