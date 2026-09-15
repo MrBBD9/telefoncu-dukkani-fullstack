@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, ShieldCheck, Phone, MessageSquare, RefreshCw, ArrowRightLeft, Store, LayoutDashboard, LogOut } from 'lucide-react';
+import { Smartphone, ShieldCheck, Phone, MessageSquare, RefreshCw, ArrowRightLeft, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({
@@ -9,7 +9,7 @@ export default function Navbar({
   compareCount,
   onOpenCompare
 }) {
-  const { isAdmin, setIsAdminOpen, logout, shopInfo } = useAuth();
+  const { shopInfo } = useAuth();
 
   const handleWhatsAppClick = () => {
     const cleanNumber = shopInfo.whatsapp.replace(/\D/g, '');
@@ -37,17 +37,6 @@ export default function Navbar({
             </button>
             <span className="hidden sm:inline">|</span>
             <span className="hidden sm:inline">Çalışma Saatleri: 09:00 - 21:00</span>
-
-            {/* If Admin logged in, show subtle dashboard shortcut */}
-            {isAdmin && (
-              <button
-                onClick={() => setIsAdminOpen(true)}
-                className="text-amber-400 font-bold flex items-center gap-1 hover:underline ml-2"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Yönetim Portalı</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

@@ -24,7 +24,7 @@
     ],
     "description": "Cihazımız Apple Türkiye çıkışlıdır. Çizik, vuruk, kılcal iz dahi yoktur. Pil sağlığı %99'dur. Kutusu, faturası ve tüm orijinal aksesuarları eksiksiz teslim edilecektir. Dükkanımızdan 3 ay mekanik garanti veriyoruz.",
     "createdAt": "2026-09-15T18:41:24.145Z",
-    "views": 142
+    "views": 144
   },
   {
     "id": "phone-2",
@@ -33,7 +33,7 @@
     "model": "Galaxy S24 Ultra",
     "price": 61900,
     "status": "Sıfır",
-    "isSold": false,
+    "isSold": true,
     "storage": "512 GB",
     "ram": "12 GB",
     "color": "Titanyum Siyah",
@@ -58,7 +58,7 @@
     "model": "iPhone 13",
     "price": 32500,
     "status": "İkinci El",
-    "isSold": false,
+    "isSold": true,
     "storage": "128 GB",
     "ram": "4 GB",
     "color": "Yıldız Işığı",
@@ -84,7 +84,7 @@
     "model": "13T Pro",
     "price": 27900,
     "status": "Yenilenmiş",
-    "isSold": false,
+    "isSold": true,
     "storage": "512 GB",
     "ram": "12 GB",
     "color": "Siyah",
