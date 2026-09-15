@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import PhoneFormModal from './PhoneFormModal';
+import QuickCostPriceModal from './QuickCostPriceModal';
 import PrintPriceTagModal from '../PrintPriceTagModal';
 
 export default function AdminPortalPage({ onGoToStorefront }) {
@@ -20,6 +21,9 @@ export default function AdminPortalPage({ onGoToStorefront }) {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [phoneToEdit, setPhoneToEdit] = useState(null);
+
+  // Quick Cost Price Modal State
+  const [phoneToQuickCost, setPhoneToQuickCost] = useState(null);
 
   // Print Modal State
   const [phoneToPrint, setPhoneToPrint] = useState(null);
@@ -521,8 +525,8 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                       </div>
 
                       <button
-                        onClick={() => handleOpenEditForm(phone)}
-                        className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] transition-colors flex-shrink-0"
+                        onClick={() => setPhoneToQuickCost(phone)}
+                        className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] transition-colors flex-shrink-0 cursor-pointer"
                       >
                         Maliyet Gir
                       </button>
@@ -661,11 +665,18 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                             {/* Alış Fiyatı */}
                             <td className="py-2.5 px-4 font-semibold text-gray-700">
                               {hasCost ? (
-                                <span className="text-gray-900">{formatPrice(phone.costPrice)}</span>
+                                <button
+                                  onClick={() => setPhoneToQuickCost(phone)}
+                                  title="Alış Fiyatını Düzenle"
+                                  className="text-gray-900 font-bold hover:text-emerald-700 hover:underline flex items-center gap-1 group cursor-pointer"
+                                >
+                                  <span>{formatPrice(phone.costPrice)}</span>
+                                  <Edit className="w-3 h-3 text-gray-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </button>
                               ) : (
                                 <button
-                                  onClick={() => handleOpenEditForm(phone)}
-                                  className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 text-[10px] font-bold border border-amber-300 transition-colors"
+                                  onClick={() => setPhoneToQuickCost(phone)}
+                                  className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 text-[10px] font-bold border border-amber-300 transition-colors cursor-pointer"
                                 >
                                   + Alış Fiyatı Gir
                                 </button>
@@ -857,6 +868,15 @@ export default function AdminPortalPage({ onGoToStorefront }) {
           onSuccess={() => {
             loadPhones();
           }}
+        />
+      )}
+
+      {/* Quick Cost Price Modal */}
+      {phoneToQuickCost && (
+        <QuickCostPriceModal
+          phone={phoneToQuickCost}
+          onClose={() => setPhoneToQuickCost(null)}
+          onSuccess={() => loadPhones()}
         />
       )}
 

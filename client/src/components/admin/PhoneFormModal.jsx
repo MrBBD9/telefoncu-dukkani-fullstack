@@ -109,7 +109,7 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
       brand,
       model,
       price: Number(price),
-      costPrice: costPrice ? Number(costPrice) : null,
+      costPrice: (costPrice !== '' && costPrice !== null && !isNaN(Number(costPrice))) ? Number(costPrice) : null,
       status,
       storage,
       ram,
