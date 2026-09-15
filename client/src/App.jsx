@@ -8,15 +8,19 @@ import AdminLoginModal from './components/admin/AdminLoginModal';
 import AdminPortalPage from './components/admin/AdminPortalPage';
 import CompareModal from './components/CompareModal';
 import TradeInModal from './components/TradeInModal';
+import ShopIntroPage from './components/ShopIntroPage';
 import Footer from './components/Footer';
 import { api } from './services/api';
 
 function MainStoreContent() {
-  const { isAdmin, isAdminOpen, setIsAdminOpen } = useAuth();
+  const { isAdmin, isAdminOpen, setIsAdminOpen, setIsLoginModalOpen } = useAuth();
 
   const [phones, setPhones] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Public tab: 'storefront' | 'shop-intro'
+  const [activeTab, setActiveTab] = useState('storefront');
+
   // View mode: 'storefront' | 'admin-portal'
   const [viewMode, setViewMode] = useState('storefront');
 
@@ -37,6 +41,26 @@ function MainStoreContent() {
 
   // Detail Modal
   const [selectedPhoneId, setSelectedPhoneId] = useState(null);
+
+  // SECRET LINK LISTENER: Listen for secret URL hash or path '#/patron-giris' or '/patron-giris'
+  useEffect(() => {
+    const checkSecretRoute = () => {
+      const hash = window.location.hash;
+      const pathname = window.location.pathname;
+      
+      if (hash === '#/patron-giris' || pathname === '/patron-giris' || hash === '#/admin' || pathname === '/admin') {
+        if (isAdmin) {
+          setViewMode('admin-portal');
+        } else {
+          setIsLoginModalOpen(true);
+        }
+      }
+    };
+
+    checkSecretRoute();
+    window.addEventListener('hashchange', checkSecretRoute);
+    return () => window.removeEventListener('hashchange', checkSecretRoute);
+  }, [isAdmin, setIsLoginModalOpen]);
 
   const fetchPhones = useCallback(async () => {
     setLoading(true);
@@ -100,12 +124,14 @@ function MainStoreContent() {
     setCompareList(prev => prev.filter(p => p.id !== id));
   };
 
+  // If Admin Portal Mode is Active
   if (isAdmin && viewMode === 'admin-portal') {
     return (
       <AdminPortalPage
         onGoToStorefront={() => {
           setIsAdminOpen(false);
           setViewMode('storefront');
+          window.location.hash = '';
           fetchPhones();
         }}
       />
@@ -117,37 +143,48 @@ function MainStoreContent() {
       
       <div>
         <Navbar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
           onOpenTradeIn={() => setIsTradeInOpen(true)}
           compareCount={compareList.length}
           onOpenCompare={() => setIsCompareModalOpen(true)}
         />
 
         <main>
-          <HeroSection
-            search={search}
-            setSearch={setSearch}
-            selectedBrand={selectedBrand}
-            setSelectedBrand={setSelectedBrand}
-            selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
-            minPrice={minPrice}
-            setMinPrice={setMinPrice}
-            maxPrice={maxPrice}
-            setMaxPrice={setMaxPrice}
-            sort={sort}
-            setSort={setSort}
-            totalCount={phones.length}
-            onResetFilters={handleResetFilters}
-          />
+          {activeTab === 'storefront' ? (
+            <>
+              <HeroSection
+                search={search}
+                setSearch={setSearch}
+                selectedBrand={selectedBrand}
+                setSelectedBrand={setSelectedBrand}
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                sort={sort}
+                setSort={setSort}
+                totalCount={phones.length}
+                onResetFilters={handleResetFilters}
+              />
 
-          <PhoneGrid
-            phones={phones}
-            loading={loading}
-            onSelectPhone={(phone) => setSelectedPhoneId(phone.id)}
-            onResetFilters={handleResetFilters}
-            compareList={compareList}
-            onToggleCompare={handleToggleCompare}
-          />
+              <PhoneGrid
+                phones={phones}
+                loading={loading}
+                onSelectPhone={(phone) => setSelectedPhoneId(phone.id)}
+                onResetFilters={handleResetFilters}
+                compareList={compareList}
+                onToggleCompare={handleToggleCompare}
+              />
+            </>
+          ) : (
+            <ShopIntroPage
+              onGoToStorefront={() => setActiveTab('storefront')}
+              onOpenTradeIn={() => setIsTradeInOpen(true)}
+            />
+          )}
         </main>
       </div>
 
@@ -181,7 +218,7 @@ function MainStoreContent() {
         />
       )}
 
-      {/* Admin Login Modal */}
+      {/* Admin Login Modal (Triggered by Secret URL) */}
       <AdminLoginModal />
 
     </div>
