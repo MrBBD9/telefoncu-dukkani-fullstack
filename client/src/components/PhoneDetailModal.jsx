@@ -18,6 +18,7 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
     if (!phoneId) return;
     setLoading(true);
     setActiveImageIndex(0);
+    setIsZoomOpen(false);
     api.getPhoneById(phoneId)
       .then(res => {
         if (res.success) {
@@ -27,6 +28,18 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
       .catch(err => console.error('Fetch detail error:', err))
       .finally(() => setLoading(false));
   }, [phoneId]);
+
+  // Keyboard navigation for zoom modal (Esc, ArrowLeft, ArrowRight)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isZoomOpen) return;
+      if (e.key === 'Escape') setIsZoomOpen(false);
+      if (e.key === 'ArrowLeft') handlePrevImage();
+      if (e.key === 'ArrowRight') handleNextImage();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomOpen, phone]);
 
   if (!phoneId) return null;
 
@@ -63,10 +76,15 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
     setActiveImageIndex(prev => (prev === imagesList.length - 1 ? 0 : prev + 1));
   };
 
+  const handleOpenZoom = (e) => {
+    e?.stopPropagation();
+    setIsZoomOpen(true);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       
-      {/* Container */}
+      {/* Modal Container */}
       <div className="relative w-full max-w-4xl bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden my-6 max-h-[90vh] flex flex-col">
         
         {/* Modal Header */}
@@ -120,7 +138,7 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
                     src={currentImage}
                     alt={phone.title}
                     className={`w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-105 ${phone.isSold ? 'grayscale opacity-60' : ''}`}
-                    onClick={() => setIsZoomOpen(true)}
+                    onClick={handleOpenZoom}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = DEFAULT_PHONE_IMAGE;
@@ -129,12 +147,12 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
 
                   {/* Zoom Fullscreen Trigger Badge */}
                   <button
-                    onClick={() => setIsZoomOpen(true)}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/90 text-gray-700 hover:bg-white shadow-sm border border-gray-200 text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Büyütmek için tıklayın"
+                    onClick={handleOpenZoom}
+                    className="absolute top-3 right-3 px-2.5 py-1.5 rounded-lg bg-white/95 text-gray-800 hover:bg-white shadow-md border border-gray-300 text-xs font-bold flex items-center gap-1.5 transition-all z-10"
+                    title="Fotoğrafı Büyüt"
                   >
                     <Maximize2 className="w-4 h-4 text-blue-600" />
-                    <span className="hidden sm:inline">Büyüt</span>
+                    <span>Büyüt</span>
                   </button>
 
                   {/* Left / Right Next Image Arrows */}
@@ -142,7 +160,7 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
                     <>
                       <button
                         onClick={handlePrevImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md border border-gray-200 transition-all opacity-80 hover:opacity-100"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md border border-gray-200 transition-all opacity-80 hover:opacity-100 z-10"
                         title="Önceki Fotoğraf"
                       >
                         <ChevronLeft className="w-5 h-5" />
@@ -150,7 +168,7 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
 
                       <button
                         onClick={handleNextImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md border border-gray-200 transition-all opacity-80 hover:opacity-100"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-gray-800 shadow-md border border-gray-200 transition-all opacity-80 hover:opacity-100 z-10"
                         title="Sonraki Fotoğraf"
                       >
                         <ChevronRight className="w-5 h-5" />
@@ -398,44 +416,63 @@ export default function PhoneDetailModal({ phoneId, onClose }) {
 
       </div>
 
-      {/* FULLSCREEN LIGHTBOX PHOTO ZOOM MODAL */}
+      {/* FULLSCREEN LIGHTBOX PHOTO ZOOM MODAL (HIGHEST Z-INDEX 9999) */}
       {isZoomOpen && (
-        <div className="fixed inset-0 z-60 bg-black/95 flex items-center justify-center p-4 animate-fade-in">
+        <div
+          style={{ zIndex: 9999 }}
+          onClick={() => setIsZoomOpen(false)}
+          className="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4 select-none animate-fade-in cursor-pointer"
+        >
+          {/* Close Button */}
           <button
-            onClick={() => setIsZoomOpen(false)}
-            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsZoomOpen(false);
+            }}
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors z-20 cursor-pointer"
+            title="Kapat (Esc)"
           >
             <X className="w-6 h-6" />
           </button>
 
+          {/* Nav Arrows */}
           {imagesList.length > 1 && (
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors z-20 cursor-pointer"
+                title="Önceki"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors z-20 cursor-pointer"
+                title="Sonraki"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             </>
           )}
 
-          <img
-            src={currentImage}
-            alt={phone?.title}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = DEFAULT_PHONE_IMAGE;
-            }}
-          />
+          {/* High Res Image */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-full max-h-[90vh] flex items-center justify-center"
+          >
+            <img
+              src={currentImage}
+              alt={phone?.title}
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = DEFAULT_PHONE_IMAGE;
+              }}
+            />
+          </div>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-xs bg-black/60 px-4 py-1.5 rounded-full backdrop-blur-md">
+          {/* Footer Counter Badge */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-xs bg-slate-900/80 border border-slate-700 px-4 py-1.5 rounded-full shadow-lg">
             Fotoğraf {activeImageIndex + 1} / {imagesList.length}
           </div>
         </div>
