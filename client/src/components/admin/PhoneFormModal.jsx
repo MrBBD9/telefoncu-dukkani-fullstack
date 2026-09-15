@@ -20,6 +20,7 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
   const [brand, setBrand] = useState('Apple');
   const [model, setModel] = useState('');
   const [price, setPrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [status, setStatus] = useState('İkinci El');
   const [storage, setStorage] = useState('128 GB');
   const [ram, setRam] = useState('8 GB');
@@ -41,6 +42,7 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
       setBrand(phoneToEdit.brand || 'Apple');
       setModel(phoneToEdit.model || '');
       setPrice(phoneToEdit.price || '');
+      setCostPrice(phoneToEdit.costPrice !== undefined && phoneToEdit.costPrice !== null ? phoneToEdit.costPrice : '');
       setStatus(phoneToEdit.status || 'İkinci El');
       setStorage(phoneToEdit.storage || '128 GB');
       setRam(phoneToEdit.ram || '8 GB');
@@ -107,6 +109,7 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
       brand,
       model,
       price: Number(price),
+      costPrice: costPrice ? Number(costPrice) : null,
       status,
       storage,
       ram,
@@ -140,6 +143,9 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
     }
   };
 
+  const calculatedProfit = (price && costPrice) ? (Number(price) - Number(costPrice)) : null;
+  const calculatedMargin = (calculatedProfit !== null && Number(price) > 0) ? ((calculatedProfit / Number(price)) * 100).toFixed(1) : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-3xl bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden my-6 max-h-[90vh] flex flex-col">
@@ -167,10 +173,10 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
             </div>
           )}
 
-          {/* Title & Brand & Price Row */}
+          {/* Title & Price & Cost Price Row */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             
-            <div className="sm:col-span-8">
+            <div className="sm:col-span-6">
               <label className="block font-bold text-gray-700 mb-1">
                 İlan Başlığı *
               </label>
@@ -179,14 +185,14 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Örn: iPhone 15 Pro Max 256GB Naturel Titanyum - Çiziksiz"
+                placeholder="Örn: iPhone 15 Pro Max 256GB Naturel Titanyum"
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:border-blue-600 focus:bg-white"
               />
             </div>
 
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-3">
               <label className="block font-bold text-gray-700 mb-1">
-                Fiyat (TL) *
+                Satış Fiyatı (TL) *
               </label>
               <input
                 type="number"
@@ -198,7 +204,45 @@ export default function PhoneFormModal({ phoneToEdit, onClose, onSuccess }) {
               />
             </div>
 
+            <div className="sm:col-span-3">
+              <label className="block font-bold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Alış Fiyatı (Maliyet)</span>
+                <span className="text-[10px] text-gray-400 font-normal">Opsiyonel</span>
+              </label>
+              <input
+                type="number"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                placeholder="Örn: 49000"
+                className="w-full px-3 py-2 bg-emerald-50/60 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:border-emerald-600 focus:bg-white"
+              />
+            </div>
+
           </div>
+
+          {/* Live Profit Calculation Banner */}
+          {calculatedProfit !== null && (
+            <div className={`p-2.5 rounded-lg border flex items-center justify-between font-bold text-xs ${
+              calculatedProfit >= 0
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="text-base">{calculatedProfit >= 0 ? '💰' : '⚠️'}</span>
+                <span>
+                  {calculatedProfit >= 0 ? 'Hesaplanan Net Kâr Beklentisi:' : 'Hesaplanan Zarar:'}
+                </span>
+                <span className="text-sm font-black underline">
+                  {calculatedProfit >= 0 ? `+${calculatedProfit.toLocaleString('tr-TR')} TL` : `${calculatedProfit.toLocaleString('tr-TR')} TL`}
+                </span>
+              </div>
+              {calculatedMargin !== null && (
+                <span className="bg-white px-2.5 py-1 rounded border border-emerald-300 text-[11px] shadow-sm">
+                  Kâr Marjı: <strong>%{calculatedMargin}</strong>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Brand, Model, Status */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

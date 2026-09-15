@@ -113,6 +113,7 @@ router.post('/', verifyToken, (req, res) => {
     brand,
     model,
     price,
+    costPrice,
     originalPrice,
     status,
     storage,
@@ -145,6 +146,7 @@ router.post('/', verifyToken, (req, res) => {
     brand: brand.trim(),
     model: model ? model.trim() : '',
     price: Number(price),
+    costPrice: costPrice !== undefined && costPrice !== null && costPrice !== '' ? Number(costPrice) : null,
     originalPrice: originalPrice ? Number(originalPrice) : null,
     status: status || 'İkinci El',
     isSold: false,
@@ -189,7 +191,7 @@ router.put('/:id', verifyToken, (req, res) => {
 
   const existing = phones[index];
   const {
-    title, brand, model, price, originalPrice, status, isSold, storage, ram, color,
+    title, brand, model, price, costPrice, originalPrice, status, isSold, storage, ram, color,
     batteryHealth, warrantyStatus, cosmeticRating, processor, screen, camera, simType,
     exchangeAvailable, accessories, images, description
   } = req.body;
@@ -200,6 +202,7 @@ router.put('/:id', verifyToken, (req, res) => {
     brand: brand !== undefined ? brand.trim() : existing.brand,
     model: model !== undefined ? model.trim() : existing.model,
     price: price !== undefined ? Number(price) : existing.price,
+    costPrice: costPrice !== undefined ? (costPrice !== null && costPrice !== '' ? Number(costPrice) : null) : existing.costPrice,
     originalPrice: originalPrice !== undefined ? (originalPrice ? Number(originalPrice) : null) : existing.originalPrice,
     status: status !== undefined ? status : existing.status,
     isSold: isSold !== undefined ? Boolean(isSold) : existing.isSold,

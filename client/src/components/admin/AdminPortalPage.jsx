@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Smartphone, ShieldCheck, Plus, Edit, Trash2, CheckCircle2, AlertCircle, ShoppingBag,
-  TrendingUp, Layers, Check, Settings, LogOut, Eye, Search, Filter, Globe, ArrowLeft, Printer
+  TrendingUp, Layers, Check, Settings, LogOut, Eye, Search, Filter, Globe, ArrowLeft, Printer,
+  DollarSign, AlertTriangle, PieChart, BarChart3, Award, Sparkles, ArrowUpRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -13,7 +14,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
   const [phones, setPhones] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'listings' | 'shop-settings'
   const [adminSearch, setAdminSearch] = useState('');
   const [adminStatusFilter, setAdminStatusFilter] = useState('all');
   
@@ -49,6 +50,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
   }, []);
 
   const formatPrice = (price) => {
+    if (price === null || price === undefined || isNaN(price)) return '-';
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(price);
   };
 
@@ -106,10 +108,64 @@ export default function AdminPortalPage({ onGoToStorefront }) {
     }
   };
 
+  // FINANCIAL & ANALYTICS CALCULATIONS
   const activeCount = phones.filter(p => !p.isSold).length;
   const soldCount = phones.filter(p => p.isSold).length;
-  const totalValue = phones.reduce((acc, curr) => acc + Number(curr.price || 0), 0);
-  const avgPrice = phones.length > 0 ? Math.round(totalValue / phones.length) : 0;
+  
+  // Sold phones
+  const soldPhones = phones.filter(p => p.isSold);
+  
+  // Total Revenue (Toplanan Ciro) from all sold phones
+  const totalRevenue = soldPhones.reduce((acc, curr) => acc + Number(curr.price || 0), 0);
+  
+  // Sold phones WITH cost price entered
+  const soldWithCost = soldPhones.filter(p => p.costPrice !== null && p.costPrice !== undefined && p.costPrice !== '' && !isNaN(Number(p.costPrice)));
+  const soldRevenueWithCost = soldWithCost.reduce((acc, curr) => acc + Number(curr.price || 0), 0);
+  const soldTotalCost = soldWithCost.reduce((acc, curr) => acc + Number(curr.costPrice || 0), 0);
+  
+  // Realized Net Profit (Gerçekleşen Net Kâr)
+  const netProfit = soldRevenueWithCost - soldTotalCost;
+  const profitMarginPercent = soldRevenueWithCost > 0 ? ((netProfit / soldRevenueWithCost) * 100).toFixed(1) : '0';
+
+  // Active inventory valuation & potential profit
+  const totalInventoryValue = phones.filter(p => !p.isSold).reduce((acc, curr) => acc + Number(curr.price || 0), 0);
+  const activeWithCost = phones.filter(p => !p.isSold && p.costPrice !== null && p.costPrice !== undefined && p.costPrice !== '' && !isNaN(Number(p.costPrice)));
+  const potentialInventoryProfit = activeWithCost.reduce((acc, curr) => acc + (Number(curr.price) - Number(curr.costPrice)), 0);
+
+  // Missing cost price count
+  const missingCostPhones = phones.filter(p => p.costPrice === null || p.costPrice === undefined || p.costPrice === '' || isNaN(Number(p.costPrice)));
+  const missingCostCount = missingCostPhones.length;
+
+  // Brand analytics for charts
+  const brandAnalyticsMap = {};
+  phones.forEach(p => {
+    const b = p.brand || 'Diğer';
+    if (!brandAnalyticsMap[b]) {
+      brandAnalyticsMap[b] = { brand: b, totalCount: 0, soldCount: 0, revenue: 0, profit: 0, withCostCount: 0 };
+    }
+    brandAnalyticsMap[b].totalCount += 1;
+    if (p.isSold) {
+      brandAnalyticsMap[b].soldCount += 1;
+      brandAnalyticsMap[b].revenue += Number(p.price || 0);
+      if (p.costPrice !== null && p.costPrice !== undefined && p.costPrice !== '' && !isNaN(Number(p.costPrice))) {
+        brandAnalyticsMap[b].profit += (Number(p.price) - Number(p.costPrice));
+        brandAnalyticsMap[b].withCostCount += 1;
+      }
+    }
+  });
+  const brandAnalyticsList = Object.values(brandAnalyticsMap).sort((a, b) => b.revenue - a.revenue);
+  const maxBrandRevenue = Math.max(...brandAnalyticsList.map(b => b.revenue), 1);
+
+  // Top profitable devices leaderboard
+  const topProfitablePhones = phones
+    .filter(p => p.costPrice !== null && p.costPrice !== undefined && p.costPrice !== '' && !isNaN(Number(p.costPrice)))
+    .map(p => ({
+      ...p,
+      profit: Number(p.price) - Number(p.costPrice),
+      margin: ((Number(p.price) - Number(p.costPrice)) / Number(p.price) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 5);
 
   const filteredPhones = phones.filter(p => {
     const matchesSearch = !adminSearch ||
@@ -119,6 +175,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
     
     if (adminStatusFilter === 'active') return matchesSearch && !p.isSold;
     if (adminStatusFilter === 'sold') return matchesSearch && p.isSold;
+    if (adminStatusFilter === 'missing-cost') return matchesSearch && (p.costPrice === null || p.costPrice === undefined || p.costPrice === '' || isNaN(Number(p.costPrice)));
     return matchesSearch;
   });
 
@@ -129,7 +186,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
       <div className="bg-gray-900 text-white px-4 py-2 text-xs flex items-center justify-between border-b border-gray-800">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="font-mono text-gray-300">Yönetim Portalı:</span>
+          <span className="font-mono text-gray-300">Gizli Yönetim Portalı:</span>
           <strong className="font-mono text-emerald-400 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">
             https://admin.cepmarket.com
           </strong>
@@ -141,7 +198,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
             className="flex items-center gap-1 text-gray-300 hover:text-white font-bold transition-colors"
           >
             <Globe className="w-3.5 h-3.5 text-blue-400" />
-            <span>Müşteri Vitrinine Git</span>
+            <span>Müşteri Vitrinine Dön</span>
           </button>
         </div>
       </div>
@@ -158,14 +215,14 @@ export default function AdminPortalPage({ onGoToStorefront }) {
               <span className="text-base font-black text-gray-900 leading-none block">
                 {shopInfo.shopName} Yönetim Portalı
               </span>
-              <span className="text-[11px] text-gray-500 font-semibold">Detaylı İlan & Stok Kontrol Ekranı</span>
+              <span className="text-[11px] text-gray-500 font-semibold">Gelişmiş Finansal Ciro, Net Kâr & Stok Ekranı</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleOpenAddForm}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Yeni Telefon İlanı Ekle</span>
@@ -191,7 +248,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
         </div>
       </header>
 
-      {/* Admin Navigation Sidebar / Tabs */}
+      {/* Admin Navigation Tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto py-2">
           
@@ -204,7 +261,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
             }`}
           >
             <TrendingUp className="w-4 h-4 text-emerald-400" />
-            <span>Genel Bakış & İstatistikler</span>
+            <span>Finansal Dashboard & Kâr Grafikleri</span>
           </button>
 
           <button
@@ -217,6 +274,11 @@ export default function AdminPortalPage({ onGoToStorefront }) {
           >
             <Layers className="w-4 h-4 text-blue-400" />
             <span>Tüm Telefon İlanları ({phones.length})</span>
+            {missingCostCount > 0 && (
+              <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-extrabold">
+                {missingCostCount} eksik maliyet
+              </span>
+            )}
           </button>
 
           <button
@@ -228,7 +290,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
             }`}
           >
             <Settings className="w-4 h-4 text-amber-400" />
-            <span>Mağaza İletişim & Şifre Ayarları</span>
+            <span>Mağaza İletişim & Ayarlar</span>
           </button>
 
         </div>
@@ -237,122 +299,238 @@ export default function AdminPortalPage({ onGoToStorefront }) {
       {/* Admin Main Body Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
         
-        {/* TAB 1: OVERVIEW & STATS */}
+        {/* TAB 1: DETAILED FINANCIAL DASHBOARD & STATS */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Rule Disclaimer Banner */}
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                <div>
+                  <strong className="font-bold block text-amber-950">Kâr Grafiği ve Finansal Hesaplama Kuralı:</strong>
+                  <span>Alış fiyatı (maliyet) girilen ilanların kârı hesaplanır. <strong>Alış fiyatı girilmeyen ilanlar kâr grafiği ve marj oranlarına kesinlikle dahil edilmez.</strong></span>
+                </div>
+              </div>
+              {missingCostCount > 0 && (
+                <button
+                  onClick={() => {
+                    setAdminStatusFilter('missing-cost');
+                    setActiveTab('listings');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 flex-shrink-0 transition-colors"
+                >
+                  <span>{missingCostCount} İlana Alış Fiyatı Ekle →</span>
+                </button>
+              )}
+            </div>
+
+            {/* 6 Key Financial KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               
+              {/* Total Revenue (Ciro) */}
               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span className="text-xs text-gray-500 font-bold uppercase">Toplam İlan</span>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-2xl font-black text-gray-900">{phones.length}</span>
-                  <span className="text-[11px] text-gray-500 font-semibold">Cihaz</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Satış Cirosu</span>
+                  <span className="p-1 rounded bg-blue-50 text-blue-600"><DollarSign className="w-3.5 h-3.5" /></span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl font-black text-blue-700 block">{formatPrice(totalRevenue)}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">{soldCount} satılan telefon</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span className="text-xs text-gray-500 font-bold uppercase">Aktif Yayında</span>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-2xl font-black text-emerald-600">{activeCount}</span>
-                  <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Stokta</span>
+              {/* Net Profit (Kâr) */}
+              <div className="bg-white p-4 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-white shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-emerald-800 font-bold uppercase">Gerçekleşen Net Kâr</span>
+                  <span className="p-1 rounded bg-emerald-100 text-emerald-700"><TrendingUp className="w-3.5 h-3.5" /></span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl font-black text-emerald-700 block">{formatPrice(netProfit)}</span>
+                  <span className="text-[10px] text-emerald-800 font-semibold">Maliyeti bilinen satışlar</span>
                 </div>
               </div>
 
+              {/* Profit Margin % */}
               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span className="text-xs text-gray-500 font-bold uppercase">Satılan Telefonlar</span>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-2xl font-black text-amber-600">{soldCount}</span>
-                  <span className="text-[11px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Tamamlandı</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Kâr Marjı (%)</span>
+                  <span className="p-1 rounded bg-purple-50 text-purple-600"><PieChart className="w-3.5 h-3.5" /></span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl font-black text-purple-700 block">%{profitMarginPercent}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">Ortalama Kârlılık</span>
                 </div>
               </div>
 
+              {/* Potential Inventory Profit */}
               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span className="text-xs text-gray-500 font-bold uppercase">Toplam Envanter Değeri</span>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-lg font-black text-blue-700">{formatPrice(totalValue)}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Potansiyel Kâr</span>
+                  <span className="p-1 rounded bg-amber-50 text-amber-600"><Sparkles className="w-3.5 h-3.5" /></span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-lg font-black text-amber-600 block">{formatPrice(potentialInventoryProfit)}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">Stoktaki cihaz kârı</span>
                 </div>
               </div>
 
+              {/* Total Active Inventory Value */}
               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span className="text-xs text-gray-500 font-bold uppercase">Ortalama İlan Fiyatı</span>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-lg font-black text-gray-900">{formatPrice(avgPrice)}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 font-bold uppercase">Stok Değeri</span>
+                  <span className="p-1 rounded bg-gray-100 text-gray-700"><ShoppingBag className="w-3.5 h-3.5" /></span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-lg font-black text-gray-900 block">{formatPrice(totalInventoryValue)}</span>
+                  <span className="text-[10px] text-emerald-700 font-semibold">{activeCount} stokta yayında</span>
+                </div>
+              </div>
+
+              {/* Missing Cost Notice */}
+              <div className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between ${
+                missingCostCount > 0 ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-700'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase">Alış Fiyatı Boş</span>
+                  <AlertCircle className={`w-3.5 h-3.5 ${missingCostCount > 0 ? 'text-amber-600' : 'text-gray-400'}`} />
+                </div>
+                <div className="mt-2">
+                  <span className="text-xl font-black block">{missingCostCount} Cihaz</span>
+                  <span className="text-[10px] opacity-80 font-medium">Kâr grafiğine dahil değil</span>
                 </div>
               </div>
 
             </div>
 
-            {/* Quick Actions & Recent Listings */}
+            {/* Financial Visual Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
+              {/* BRAND PROFIT & REVENUE VISUAL BAR CHART */}
               <div className="lg:col-span-8 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-blue-600" />
+                      <span>Marka Bazlı Ciro & Kâr Grafiği</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500">Satılan cihazlardan elde edilen ciro ve net kâr dağılımı</p>
+                  </div>
+                  <span className="text-[11px] text-gray-400 font-medium italic">Sadece maliyeti girilenler hesaplanır</span>
+                </div>
+
+                <div className="space-y-4 pt-1">
+                  {brandAnalyticsList.map(b => {
+                    const revPct = Math.round((b.revenue / maxBrandRevenue) * 100);
+                    return (
+                      <div key={b.brand} className="space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="text-gray-900 flex items-center gap-2">
+                            {b.brand}
+                            <span className="text-[11px] font-normal text-gray-500">({b.soldCount} Satış / {b.totalCount} İlan)</span>
+                          </span>
+                          <div className="flex items-center gap-4 text-right">
+                            <span className="text-gray-600">Ciro: <strong>{formatPrice(b.revenue)}</strong></span>
+                            <span className="text-emerald-700">Kâr: <strong>+{formatPrice(b.profit)}</strong></span>
+                          </div>
+                        </div>
+
+                        {/* Revenue Bar */}
+                        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex">
+                          <div
+                            style={{ width: `${revPct}%` }}
+                            className="h-full bg-blue-600 rounded-full transition-all duration-500 relative"
+                            title={`Ciro: ${formatPrice(b.revenue)}`}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* TOP PROFITABLE PHONES LEADERBOARD */}
+              <div className="lg:col-span-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4 text-xs">
+                <div className="border-b border-gray-100 pb-3">
                   <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-blue-600" />
-                    <span>Son Eklenen İlanlar</span>
+                    <Award className="w-4 h-4 text-amber-500" />
+                    <span>En Çok Kâr Getiren Telefonlar</span>
                   </h3>
-                  <button
-                    onClick={() => setActiveTab('listings')}
-                    className="text-xs text-blue-600 font-bold hover:underline"
-                  >
-                    Tümünü Gör ({phones.length}) →
-                  </button>
+                  <p className="text-[11px] text-gray-500">Alış ve satış fiyatı farkına göre en yüksek kârlılık</p>
                 </div>
 
                 <div className="divide-y divide-gray-100">
-                  {phones.slice(0, 5).map(p => (
-                    <div key={p.id} className="py-2.5 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3">
+                  {topProfitablePhones.length === 0 ? (
+                    <div className="py-6 text-center text-gray-400">
+                      Henüz alış fiyatı girilmiş telefon bulunamadı.
+                    </div>
+                  ) : (
+                    topProfitablePhones.map((phone, index) => (
+                      <div key={phone.id} className="py-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                            index === 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <div>
+                            <span className="font-bold text-gray-900 block line-clamp-1">{phone.title}</span>
+                            <span className="text-[10px] text-gray-500">Satış: {formatPrice(phone.price)} • Alış: {formatPrice(phone.costPrice)}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-emerald-700 font-extrabold block text-xs">+{formatPrice(phone.profit)}</span>
+                          <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                            %{phone.margin} kâr
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* MISSING COST PRICE ACTION BOX */}
+            {missingCostCount > 0 && (
+              <div className="bg-white p-5 rounded-xl border border-amber-200 shadow-sm space-y-3 text-xs">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span>Alış Fiyatı (Maliyeti) Girilmeyen İlanlar ({missingCostCount} Adet)</span>
+                  </h3>
+                  <span className="text-[11px] text-gray-500">Bu ilanlar kâr grafiğinde görünmemektedir. Alış fiyatı ekleyebilirsiniz.</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {missingCostPhones.map(phone => (
+                    <div key={phone.id} className="p-3 rounded-lg bg-amber-50/60 border border-amber-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
                         <img
-                          src={p.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80'}
-                          alt={p.title}
-                          className="w-10 h-10 rounded object-cover border border-gray-200"
+                          src={phone.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80'}
+                          alt={phone.title}
+                          className="w-8 h-8 rounded object-cover border border-amber-300"
                         />
                         <div>
-                          <span className="font-bold text-gray-900 block line-clamp-1">{p.title}</span>
-                          <span className="text-[11px] text-gray-500">{p.brand} {p.model} • {p.storage} / {p.ram}</span>
+                          <span className="font-bold text-gray-900 block line-clamp-1">{phone.title}</span>
+                          <span className="text-[10px] text-gray-600">Satış Fiyatı: {formatPrice(phone.price)}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <strong className="text-blue-700 text-sm">{formatPrice(p.price)}</strong>
-                        <button
-                          onClick={() => setPhoneToPrint(p)}
-                          className="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-[10px] font-bold flex items-center gap-1"
-                        >
-                          <Printer className="w-3 h-3 text-blue-600" />
-                          <span>Etiket Yazdır</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleOpenEditForm(phone)}
+                        className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] transition-colors flex-shrink-0"
+                      >
+                        Maliyet Gir
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div className="lg:col-span-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4 text-xs">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" />
-                  <span>Mağaza İletişim Bilgileri</span>
-                </h3>
-
-                <div className="space-y-2 text-gray-700">
-                  <p><strong>Mağaza Adı:</strong> {shopInfo.shopName}</p>
-                  <p><strong>Telefon:</strong> {shopInfo.phone}</p>
-                  <p><strong>WhatsApp:</strong> {shopInfo.whatsapp}</p>
-                  <p><strong>Adres:</strong> {shopInfo.address}</p>
-                </div>
-
-                <button
-                  onClick={() => setActiveTab('shop-settings')}
-                  className="w-full py-2 px-3 rounded-lg bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
-                >
-                  Bilgileri Düzenle
-                </button>
-              </div>
-
-            </div>
+            )}
 
           </div>
         )}
@@ -369,12 +547,12 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                   type="text"
                   value={adminSearch}
                   onChange={(e) => setAdminSearch(e.target.value)}
-                  placeholder="İlanlar içinde ara..."
+                  placeholder="İlan başlığı veya marka ara..."
                   className="w-full pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:border-blue-600"
                 />
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
                 <span className="text-xs font-bold text-gray-500 uppercase">Filtre:</span>
                 <button
                   onClick={() => setAdminStatusFilter('all')}
@@ -402,11 +580,21 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                 >
                   Satılanlar ({soldCount})
                 </button>
+
+                <button
+                  onClick={() => setAdminStatusFilter('missing-cost')}
+                  className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1 ${
+                    adminStatusFilter === 'missing-cost' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+                  }`}
+                >
+                  <span>Maliyetsiz İlanlar</span>
+                  <span className="bg-amber-700 text-white px-1.5 py-0.2 rounded-full text-[10px]">{missingCostCount}</span>
+                </button>
               </div>
 
             </div>
 
-            {/* Table */}
+            {/* Detailed Table */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -414,8 +602,9 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                     <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase">
                       <th className="py-3 px-4">Telefon İlanı</th>
                       <th className="py-3 px-4">Durum</th>
-                      <th className="py-3 px-4">Fiyat</th>
-                      <th className="py-3 px-4">Özel RAM / Hafıza</th>
+                      <th className="py-3 px-4">Satış Fiyatı</th>
+                      <th className="py-3 px-4">Alış Fiyatı (Maliyet)</th>
+                      <th className="py-3 px-4">Tahmini / Net Kâr</th>
                       <th className="py-3 px-4">Satış Durumu</th>
                       <th className="py-3 px-4 text-right">İşlemler</th>
                     </tr>
@@ -423,103 +612,138 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                   <tbody className="divide-y divide-gray-100 text-xs text-gray-800">
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-gray-400 animate-pulse">
+                        <td colSpan={7} className="py-12 text-center text-gray-400 animate-pulse">
                           İlanlar yükleniyor...
                         </td>
                       </tr>
                     ) : filteredPhones.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-gray-500">
+                        <td colSpan={7} className="py-12 text-center text-gray-500">
                           Filtrenize uygun hiçbir ilan bulunamadı.
                         </td>
                       </tr>
                     ) : (
-                      filteredPhones.map(phone => (
-                        <tr key={phone.id} className="hover:bg-gray-50 transition-colors">
-                          
-                          <td className="py-2.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={phone.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80'}
-                                alt={phone.title}
-                                className="w-10 h-10 rounded object-cover border border-gray-200 flex-shrink-0"
-                              />
-                              <div>
-                                <span className="font-bold text-gray-900 block line-clamp-1">{phone.title}</span>
-                                <span className="text-[11px] text-gray-500">{phone.brand} {phone.model}</span>
+                      filteredPhones.map(phone => {
+                        const hasCost = phone.costPrice !== null && phone.costPrice !== undefined && phone.costPrice !== '' && !isNaN(Number(phone.costPrice));
+                        const itemProfit = hasCost ? (Number(phone.price) - Number(phone.costPrice)) : null;
+                        const itemMargin = (hasCost && Number(phone.price) > 0) ? ((itemProfit / Number(phone.price)) * 100).toFixed(1) : null;
+
+                        return (
+                          <tr key={phone.id} className="hover:bg-gray-50 transition-colors">
+                            
+                            <td className="py-2.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={phone.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80'}
+                                  alt={phone.title}
+                                  className="w-10 h-10 rounded object-cover border border-gray-200 flex-shrink-0"
+                                />
+                                <div>
+                                  <span className="font-bold text-gray-900 block line-clamp-1">{phone.title}</span>
+                                  <span className="text-[11px] text-gray-500">{phone.brand} {phone.model} • {phone.storage} / {phone.ram || '-'}</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          <td className="py-2.5 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                              phone.status === 'Sıfır' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {phone.status}
-                            </span>
-                          </td>
+                            <td className="py-2.5 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                                phone.status === 'Sıfır' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {phone.status}
+                              </span>
+                            </td>
 
-                          <td className="py-2.5 px-4 font-bold text-blue-700 text-sm">
-                            {formatPrice(phone.price)}
-                          </td>
+                            {/* Satış Fiyatı */}
+                            <td className="py-2.5 px-4 font-bold text-blue-700 text-sm">
+                              {formatPrice(phone.price)}
+                            </td>
 
-                          <td className="py-2.5 px-4 font-semibold text-gray-700">
-                            {phone.storage} / {phone.ram || '-'}
-                          </td>
-
-                          <td className="py-2.5 px-4">
-                            <button
-                              onClick={() => handleToggleSold(phone.id)}
-                              className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 ${
-                                phone.isSold
-                                  ? 'bg-gray-200 text-gray-700 border border-gray-300'
-                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
-                              }`}
-                            >
-                              {phone.isSold ? (
-                                <>
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                  <span>Satıldı</span>
-                                </>
+                            {/* Alış Fiyatı */}
+                            <td className="py-2.5 px-4 font-semibold text-gray-700">
+                              {hasCost ? (
+                                <span className="text-gray-900">{formatPrice(phone.costPrice)}</span>
                               ) : (
-                                <>
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Yayında</span>
-                                </>
+                                <button
+                                  onClick={() => handleOpenEditForm(phone)}
+                                  className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 text-[10px] font-bold border border-amber-300 transition-colors"
+                                >
+                                  + Alış Fiyatı Gir
+                                </button>
                               )}
-                            </button>
-                          </td>
+                            </td>
 
-                          <td className="py-2.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                            {/* Net / Tahmini Kâr */}
+                            <td className="py-2.5 px-4 font-semibold">
+                              {hasCost ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`font-black text-xs ${itemProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                                    {itemProfit >= 0 ? `+${formatPrice(itemProfit)}` : formatPrice(itemProfit)}
+                                  </span>
+                                  <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                                    %{itemMargin}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-gray-400 italic">Kâr Grafiğinde Yok</span>
+                              )}
+                            </td>
+
+                            {/* Satış Durumu Toggle */}
+                            <td className="py-2.5 px-4">
                               <button
-                                onClick={() => setPhoneToPrint(phone)}
-                                title="Mağaza Camı Etiketi Yazdır"
-                                className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-emerald-600 hover:text-white transition-colors"
+                                onClick={() => handleToggleSold(phone.id)}
+                                className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 ${
+                                  phone.isSold
+                                    ? 'bg-gray-200 text-gray-700 border border-gray-300'
+                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200'
+                                }`}
                               >
-                                <Printer className="w-4 h-4" />
+                                {phone.isSold ? (
+                                  <>
+                                    <AlertCircle className="w-3.5 h-3.5" />
+                                    <span>Satıldı</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Yayında</span>
+                                  </>
+                                )}
                               </button>
+                            </td>
 
-                              <button
-                                onClick={() => handleOpenEditForm(phone)}
-                                title="Düzenle"
-                                className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
+                            {/* Actions */}
+                            <td className="py-2.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setPhoneToPrint(phone)}
+                                  title="Mağaza Camı Etiketi Yazdır"
+                                  className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-emerald-600 hover:text-white transition-colors"
+                                >
+                                  <Printer className="w-4 h-4" />
+                                </button>
 
-                              <button
-                                onClick={() => handleDelete(phone.id, phone.title)}
-                                title="Sil"
-                                className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                                <button
+                                  onClick={() => handleOpenEditForm(phone)}
+                                  title="Düzenle"
+                                  className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-colors"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
 
-                        </tr>
-                      ))
+                                <button
+                                  onClick={() => handleDelete(phone.id, phone.title)}
+                                  title="Sil"
+                                  className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

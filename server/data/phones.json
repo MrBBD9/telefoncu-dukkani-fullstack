@@ -5,6 +5,7 @@
     "brand": "Apple",
     "model": "15 Pro Max",
     "price": 67500,
+    "costPrice": 58000,
     "status": "İkinci El",
     "isSold": false,
     "storage": "256 GB",
@@ -24,7 +25,7 @@
     ],
     "description": "Cihazımız Apple Türkiye çıkışlıdır. Çizik, vuruk, kılcal iz dahi yoktur. Pil sağlığı %99'dur. Kutusu, faturası ve tüm orijinal aksesuarları eksiksiz teslim edilecektir. Dükkanımızdan 3 ay mekanik garanti veriyoruz.",
     "createdAt": "2026-09-15T18:41:24.145Z",
-    "views": 150
+    "views": 152
   },
   {
     "id": "phone-2",
@@ -32,6 +33,7 @@
     "brand": "Samsung",
     "model": "Galaxy S24 Ultra",
     "price": 61900,
+    "costPrice": 52500,
     "status": "Sıfır",
     "isSold": true,
     "storage": "512 GB",
@@ -57,6 +59,7 @@
     "brand": "Apple",
     "model": "iPhone 13",
     "price": 32500,
+    "costPrice": 26000,
     "status": "İkinci El",
     "isSold": true,
     "storage": "128 GB",
@@ -83,6 +86,7 @@
     "brand": "Xiaomi",
     "model": "13T Pro",
     "price": 27900,
+    "costPrice": 22500,
     "status": "Yenilenmiş",
     "isSold": true,
     "storage": "512 GB",
@@ -107,6 +111,7 @@
     "brand": "Apple",
     "model": "14 Pro",
     "price": 49500,
+    "costPrice": null,
     "status": "İkinci El",
     "isSold": true,
     "storage": "128 GB",
