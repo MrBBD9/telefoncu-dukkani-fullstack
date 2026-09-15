@@ -3,10 +3,9 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getPhones, savePhones } = require('../data/store');
+const { getPhones, savePhones, getTradeIns, saveTradeIns } = require('../data/store');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// Setup multer storage for uploaded images
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -25,7 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 // GET /api/phones - Public listing with filters
@@ -33,38 +32,32 @@ router.get('/', (req, res) => {
   let phones = getPhones();
   const { search, brand, status, minPrice, maxPrice, sort } = req.query;
 
-  // Search in title, model, description
   if (search && search.trim() !== '') {
     const q = search.toLowerCase().trim();
     phones = phones.filter(p =>
       p.title.toLowerCase().includes(q) ||
       p.brand.toLowerCase().includes(q) ||
       p.model.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q)
+      (p.description && p.description.toLowerCase().includes(q))
     );
   }
 
-  // Filter by Brand
   if (brand && brand !== 'Tümü') {
     phones = phones.filter(p => p.brand.toLowerCase() === brand.toLowerCase());
   }
 
-  // Filter by Status (Sıfır / İkinci El / Yenilenmiş)
   if (status && status !== 'Tümü') {
     phones = phones.filter(p => p.status === status);
   }
 
-  // Filter by Min Price
   if (minPrice && !isNaN(Number(minPrice))) {
     phones = phones.filter(p => p.price >= Number(minPrice));
   }
 
-  // Filter by Max Price
   if (maxPrice && !isNaN(Number(maxPrice))) {
     phones = phones.filter(p => p.price <= Number(maxPrice));
   }
 
-  // Sorting
   if (sort === 'price-asc') {
     phones.sort((a, b) => a.price - b.price);
   } else if (sort === 'price-desc') {
@@ -72,7 +65,6 @@ router.get('/', (req, res) => {
   } else if (sort === 'oldest') {
     phones.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   } else {
-    // default: newest
     phones.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
@@ -83,7 +75,7 @@ router.get('/', (req, res) => {
   });
 });
 
-// GET /api/phones/:id - Get single details & increment view count
+// GET /api/phones/:id
 router.get('/:id', (req, res) => {
   const phones = getPhones();
   const phoneIndex = phones.findIndex(p => p.id === req.params.id);
@@ -92,7 +84,6 @@ router.get('/:id', (req, res) => {
     return res.status(404).json({ success: false, message: 'İlan bulunamadı.' });
   }
 
-  // Increment view counter
   phones[phoneIndex].views = (phones[phoneIndex].views || 0) + 1;
   savePhones(phones);
 
@@ -102,7 +93,7 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// POST /api/phones/upload-images - Upload image files (Protected)
+// POST /api/phones/upload-images
 router.post('/upload-images', verifyToken, upload.array('images', 5), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ success: false, message: 'Hiçbir dosya yüklenmedi.' });
@@ -115,19 +106,26 @@ router.post('/upload-images', verifyToken, upload.array('images', 5), (req, res)
   });
 });
 
-// POST /api/phones - Add new phone listing (Protected)
+// POST /api/phones - Add listing
 router.post('/', verifyToken, (req, res) => {
   const {
     title,
     brand,
     model,
     price,
+    originalPrice,
     status,
     storage,
     ram,
     color,
     batteryHealth,
     warrantyStatus,
+    cosmeticRating,
+    processor,
+    screen,
+    camera,
+    simType,
+    exchangeAvailable,
     accessories,
     images,
     description
@@ -147,6 +145,7 @@ router.post('/', verifyToken, (req, res) => {
     brand: brand.trim(),
     model: model ? model.trim() : '',
     price: Number(price),
+    originalPrice: originalPrice ? Number(originalPrice) : null,
     status: status || 'İkinci El',
     isSold: false,
     storage: storage || '128 GB',
@@ -154,6 +153,12 @@ router.post('/', verifyToken, (req, res) => {
     color: color || '',
     batteryHealth: batteryHealth ? Number(batteryHealth) : null,
     warrantyStatus: warrantyStatus || 'Garantisi Bitti',
+    cosmeticRating: cosmeticRating || '9.5 / 10',
+    processor: processor || '',
+    screen: screen || '',
+    camera: camera || '',
+    simType: simType || 'BTK Kayıtlı',
+    exchangeAvailable: exchangeAvailable !== undefined ? Boolean(exchangeAvailable) : true,
     accessories: Array.isArray(accessories) ? accessories : [],
     images: Array.isArray(images) && images.length > 0 ? images : [
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80"
@@ -168,36 +173,25 @@ router.post('/', verifyToken, (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Yeni telefon ilanı başarıyla yayınlandı!',
+    message: 'Yeni telefon ilanı yayınlandı!',
     phone: newPhone
   });
 });
 
-// PUT /api/phones/:id - Update listing (Protected)
+// PUT /api/phones/:id - Update listing
 router.put('/:id', verifyToken, (req, res) => {
   const phones = getPhones();
   const index = phones.findIndex(p => p.id === req.params.id);
 
   if (index === -1) {
-    return res.status(404).json({ success: false, message: 'Güncellenecek ilan bulunamadı.' });
+    return res.status(404).json({ success: false, message: 'İlan bulunamadı.' });
   }
 
   const existing = phones[index];
   const {
-    title,
-    brand,
-    model,
-    price,
-    status,
-    isSold,
-    storage,
-    ram,
-    color,
-    batteryHealth,
-    warrantyStatus,
-    accessories,
-    images,
-    description
+    title, brand, model, price, originalPrice, status, isSold, storage, ram, color,
+    batteryHealth, warrantyStatus, cosmeticRating, processor, screen, camera, simType,
+    exchangeAvailable, accessories, images, description
   } = req.body;
 
   phones[index] = {
@@ -206,6 +200,7 @@ router.put('/:id', verifyToken, (req, res) => {
     brand: brand !== undefined ? brand.trim() : existing.brand,
     model: model !== undefined ? model.trim() : existing.model,
     price: price !== undefined ? Number(price) : existing.price,
+    originalPrice: originalPrice !== undefined ? (originalPrice ? Number(originalPrice) : null) : existing.originalPrice,
     status: status !== undefined ? status : existing.status,
     isSold: isSold !== undefined ? Boolean(isSold) : existing.isSold,
     storage: storage !== undefined ? storage : existing.storage,
@@ -213,6 +208,12 @@ router.put('/:id', verifyToken, (req, res) => {
     color: color !== undefined ? color : existing.color,
     batteryHealth: batteryHealth !== undefined ? (batteryHealth ? Number(batteryHealth) : null) : existing.batteryHealth,
     warrantyStatus: warrantyStatus !== undefined ? warrantyStatus : existing.warrantyStatus,
+    cosmeticRating: cosmeticRating !== undefined ? cosmeticRating : existing.cosmeticRating,
+    processor: processor !== undefined ? processor : existing.processor,
+    screen: screen !== undefined ? screen : existing.screen,
+    camera: camera !== undefined ? camera : existing.camera,
+    simType: simType !== undefined ? simType : existing.simType,
+    exchangeAvailable: exchangeAvailable !== undefined ? Boolean(exchangeAvailable) : existing.exchangeAvailable,
     accessories: accessories !== undefined ? accessories : existing.accessories,
     images: images !== undefined && Array.isArray(images) && images.length > 0 ? images : existing.images,
     description: description !== undefined ? description : existing.description
@@ -222,12 +223,12 @@ router.put('/:id', verifyToken, (req, res) => {
 
   res.json({
     success: true,
-    message: 'İlan başarıyla güncellendi.',
+    message: 'İlan güncellendi.',
     phone: phones[index]
   });
 });
 
-// PATCH /api/phones/:id/toggle-sold - Toggle sold status (Protected)
+// PATCH /api/phones/:id/toggle-sold
 router.patch('/:id/toggle-sold', verifyToken, (req, res) => {
   const phones = getPhones();
   const index = phones.findIndex(p => p.id === req.params.id);
@@ -241,12 +242,12 @@ router.patch('/:id/toggle-sold', verifyToken, (req, res) => {
 
   res.json({
     success: true,
-    message: phones[index].isSold ? 'İlan "Satıldı" olarak işaretlendi.' : 'İlan yayına tekrar alındı.',
+    message: phones[index].isSold ? 'İlan "Satıldı" yapıldı.' : 'İlan tekrar yayında.',
     phone: phones[index]
   });
 });
 
-// DELETE /api/phones/:id - Delete listing (Protected)
+// DELETE /api/phones/:id
 router.delete('/:id', verifyToken, (req, res) => {
   let phones = getPhones();
   const exists = phones.some(p => p.id === req.params.id);
@@ -260,7 +261,46 @@ router.delete('/:id', verifyToken, (req, res) => {
 
   res.json({
     success: true,
-    message: 'İlan başarıyla silindi.'
+    message: 'İlan silindi.'
+  });
+});
+
+// POST /api/phones/trade-in - Submit trade-in quote request
+router.post('/trade-in', (req, res) => {
+  const { customerName, customerPhone, userPhoneModel, condition, targetPhoneId, estimatedValue } = req.body;
+
+  if (!customerPhone || !userPhoneModel) {
+    return res.status(400).json({ success: false, message: 'Telefon numarası ve cihaz modeli zorunludur.' });
+  }
+
+  const tradeIns = getTradeIns();
+  const newTradeIn = {
+    id: 'trade-' + Date.now(),
+    customerName: customerName || 'Anonim Müşteri',
+    customerPhone,
+    userPhoneModel,
+    condition: condition || 'İkinci El - Temiz',
+    targetPhoneId: targetPhoneId || null,
+    estimatedValue: estimatedValue || 0,
+    createdAt: new Date().toISOString()
+  };
+
+  tradeIns.unshift(newTradeIn);
+  saveTradeIns(tradeIns);
+
+  res.status(201).json({
+    success: true,
+    message: 'Takas talebiniz alındı!',
+    tradeIn: newTradeIn
+  });
+});
+
+// GET /api/phones/trade-in - Protected list trade ins
+router.get('/trade-in/list', verifyToken, (req, res) => {
+  const tradeIns = getTradeIns();
+  res.json({
+    success: true,
+    tradeIns
   });
 });
 

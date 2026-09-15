@@ -4,13 +4,13 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname);
 const PHONES_FILE = path.join(DATA_DIR, 'phones.json');
 const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
+const TRADEINS_FILE = path.join(DATA_DIR, 'tradeins.json');
 
-// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Initial Seed Phones with high quality images and realistic Turkish descriptions
+// Initial Seed Phones with rich specifications
 const SEED_PHONES = [
   {
     id: "phone-1",
@@ -18,6 +18,7 @@ const SEED_PHONES = [
     brand: "Apple",
     model: "15 Pro Max",
     price: 67500,
+    originalPrice: 72000,
     status: "İkinci El",
     isSold: false,
     storage: "256 GB",
@@ -25,6 +26,12 @@ const SEED_PHONES = [
     color: "Naturel Titanyum",
     batteryHealth: 99,
     warrantyStatus: "18 Ay Apple Türkiye Garantili",
+    cosmeticRating: "9.9 / 10 (Kusursuz)",
+    processor: "Apple A17 Pro (3nm)",
+    screen: "6.7 inç Super Retina XDR OLED (120Hz ProMotion)",
+    camera: "48 MP Ana + 12 MP Ultra Geniş + 12 MP 5x Telefoto",
+    simType: "Fiziksel SIM + eSIM (BTK Türkiye Çıkışlı)",
+    exchangeAvailable: true,
     accessories: ["Orijinal Kutu", "Fatura", "Şarj Kablosu", "Hediye Kılıf & Cam"],
     images: [
       "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80",
@@ -32,7 +39,7 @@ const SEED_PHONES = [
     ],
     description: "Cihazımız Apple Türkiye çıkışlıdır. Çizik, vuruk, kılcal iz dahi yoktur. Pil sağlığı %99'dur. Kutusu, faturası ve tüm orijinal aksesuarları eksiksiz teslim edilecektir. Dükkanımızdan 3 ay mekanik garanti veriyoruz.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    views: 142
+    views: 184
   },
   {
     id: "phone-2",
@@ -40,6 +47,7 @@ const SEED_PHONES = [
     brand: "Samsung",
     model: "Galaxy S24 Ultra",
     price: 61900,
+    originalPrice: 65900,
     status: "Sıfır",
     isSold: false,
     storage: "512 GB",
@@ -47,14 +55,20 @@ const SEED_PHONES = [
     color: "Titanyum Siyah",
     batteryHealth: 100,
     warrantyStatus: "2 Yıl Samsung Türkiye Garantili",
-    accessories: ["Kapalı Kutu", "Fatura"],
+    cosmeticRating: "10 / 10 (Sıfır Kapalı Kutu)",
+    processor: "Snapdragon 8 Gen 3 for Galaxy",
+    screen: "6.8 inç Dynamic AMOLED 2X (120Hz, 2600 nits)",
+    camera: "200 MP Ana + 50 MP 5x Telefoto + 12 MP Ultra Geniş",
+    simType: "Çift SIM (Fiziksel + eSIM)",
+    exchangeAvailable: true,
+    accessories: ["Kapalı Kutu", "Fatura", "S-Pen Kalem"],
     images: [
       "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1583573636246-18cb2246697f?auto=format&fit=crop&w=800&q=80"
     ],
     description: "Ambalajı açılmamış sıfır kapalı kutu ürün. Samsung Türkiye 2 yıl garantilidir. Adınıza faturalı teslim edilir. Galaxy AI yapay zeka özellikleri aktiftir.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-    views: 89
+    views: 112
   },
   {
     id: "phone-3",
@@ -62,6 +76,7 @@ const SEED_PHONES = [
     brand: "Apple",
     model: "iPhone 13",
     price: 32500,
+    originalPrice: null,
     status: "İkinci El",
     isSold: false,
     storage: "128 GB",
@@ -69,6 +84,12 @@ const SEED_PHONES = [
     color: "Yıldız Işığı",
     batteryHealth: 91,
     warrantyStatus: "Garantisi Bitti",
+    cosmeticRating: "9.5 / 10 (Temiz)",
+    processor: "Apple A15 Bionic",
+    screen: "6.1 inç Super Retina XDR OLED",
+    camera: "12 MP Çift Kamera (Gece Modu & Sinematik)",
+    simType: "BTK Kayıtlı Türkiye Cihazı",
+    exchangeAvailable: true,
     accessories: ["Orijinal Kutu", "Fatura", "Şarj Kablosu"],
     images: [
       "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80",
@@ -76,7 +97,7 @@ const SEED_PHONES = [
     ],
     description: "Cihazımızın değişeni, tamiri kesinlikle yoktur. Tüm aksamları (Face ID, TrueTone) aktif çalışmaktadır. Ekranda koruyucu kırılmaz cam vardır.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    views: 210
+    views: 245
   },
   {
     id: "phone-4",
@@ -84,20 +105,27 @@ const SEED_PHONES = [
     brand: "Xiaomi",
     model: "13T Pro",
     price: 27900,
+    originalPrice: 31000,
     status: "Yenilenmiş",
     isSold: false,
     storage: "512 GB",
-    ram: "12 GB",
+    ram: "12 GB (+6GB Sanal)",
     color: "Siyah",
     batteryHealth: 96,
     warrantyStatus: "6 Ay Mağaza Garantili",
-    accessories: ["120W Orijinal Hızlı Şarj", "Kılıf"],
+    cosmeticRating: "9.7 / 10",
+    processor: "MediaTek Dimensity 9200+ (4nm)",
+    screen: "6.67 inç CrystalRes AMOLED (144Hz)",
+    camera: "50 MP Leica Optik + 50 MP Telefoto + 12 MP Geniş",
+    simType: "Çift SIM",
+    exchangeAvailable: true,
+    accessories: ["120W Orijinal Hızlı Şarj Adaptörü", "Kılıf"],
     images: [
       "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80"
     ],
     description: "Leica işbirliği kameralı, 120W süper hızlı şarj destekli amiral gemisi. Ekranı 144Hz AMOLED. Mağazamız tarafından bakımları yapılmış kusursuz ürün.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    views: 115
+    views: 138
   },
   {
     id: "phone-5",
@@ -105,6 +133,7 @@ const SEED_PHONES = [
     brand: "Apple",
     model: "14 Pro",
     price: 49500,
+    originalPrice: null,
     status: "İkinci El",
     isSold: true,
     storage: "128 GB",
@@ -112,27 +141,31 @@ const SEED_PHONES = [
     color: "Derin Mor",
     batteryHealth: 88,
     warrantyStatus: "Garantisi Bitti",
+    cosmeticRating: "9.6 / 10",
+    processor: "Apple A16 Bionic",
+    screen: "6.1 inç Super Retina XDR OLED (Dynamic Island)",
+    camera: "48 MP Ana + 12 MP Geniş + 12 MP Telefoto",
+    simType: "BTK Kayıtlı Türkiye",
+    exchangeAvailable: false,
     accessories: ["Orijinal Kutu", "Fatura", "Hızlı Şarj Adaptörü"],
     images: [
       "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?auto=format&fit=crop&w=800&q=80"
     ],
     description: "Dinamik Ada (Dynamic Island) ve 48MP kameralı ikonik mor renk. Ekranında en ufak çizik dahi yoktur. Kılıf ile titizlikle kullanılmıştır.",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-    views: 340
+    views: 380
   }
 ];
 
 const SEED_ADMIN = {
   username: "admin",
-  // Simple MD5/sha or plain text comparison for simplicity, or hardcoded pass "admin123"
-  passwordHash: "admin123", // In production hash with bcrypt, plain check for simple local shop demo
+  passwordHash: "admin123",
   shopName: "CepMarket Mobile",
   phone: "0532 000 00 00",
   whatsapp: "905320000000",
   address: "Merkez Mah. Atatürk Cad. No:45/A, Kadıköy / İstanbul"
 };
 
-// Initialize JSON files if missing
 function initStore() {
   if (!fs.existsSync(PHONES_FILE)) {
     fs.writeFileSync(PHONES_FILE, JSON.stringify(SEED_PHONES, null, 2), 'utf-8');
@@ -140,12 +173,14 @@ function initStore() {
   if (!fs.existsSync(ADMIN_FILE)) {
     fs.writeFileSync(ADMIN_FILE, JSON.stringify(SEED_ADMIN, null, 2), 'utf-8');
   }
+  if (!fs.existsSync(TRADEINS_FILE)) {
+    fs.writeFileSync(TRADEINS_FILE, JSON.stringify([], null, 2), 'utf-8');
+  }
 }
 
 function getPhones() {
   initStore();
-  const data = fs.readFileSync(PHONES_FILE, 'utf-8');
-  return JSON.parse(data);
+  return JSON.parse(fs.readFileSync(PHONES_FILE, 'utf-8'));
 }
 
 function savePhones(phones) {
@@ -154,12 +189,20 @@ function savePhones(phones) {
 
 function getAdmin() {
   initStore();
-  const data = fs.readFileSync(ADMIN_FILE, 'utf-8');
-  return JSON.parse(data);
+  return JSON.parse(fs.readFileSync(ADMIN_FILE, 'utf-8'));
 }
 
 function saveAdmin(adminData) {
   fs.writeFileSync(ADMIN_FILE, JSON.stringify(adminData, null, 2), 'utf-8');
+}
+
+function getTradeIns() {
+  initStore();
+  return JSON.parse(fs.readFileSync(TRADEINS_FILE, 'utf-8'));
+}
+
+function saveTradeIns(data) {
+  fs.writeFileSync(TRADEINS_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 module.exports = {
@@ -167,5 +210,7 @@ module.exports = {
   getPhones,
   savePhones,
   getAdmin,
-  saveAdmin
+  saveAdmin,
+  getTradeIns,
+  saveTradeIns
 };

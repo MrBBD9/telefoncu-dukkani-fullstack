@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Smartphone, ShieldCheck, Plus, Edit, Trash2, CheckCircle2, AlertCircle, ShoppingBag,
-  TrendingUp, Layers, Check, Settings, LogOut, Eye, Search, Filter, Globe, ArrowLeft
+  TrendingUp, Layers, Check, Settings, LogOut, Eye, Search, Filter, Globe, ArrowLeft, Printer
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import PhoneFormModal from './PhoneFormModal';
+import PrintPriceTagModal from '../PrintPriceTagModal';
 
 export default function AdminPortalPage({ onGoToStorefront }) {
   const { shopInfo, logout, updateShopInfo } = useAuth();
@@ -18,6 +19,9 @@ export default function AdminPortalPage({ onGoToStorefront }) {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [phoneToEdit, setPhoneToEdit] = useState(null);
+
+  // Print Modal State
+  const [phoneToPrint, setPhoneToPrint] = useState(null);
 
   const [shopName, setShopName] = useState(shopInfo.shopName);
   const [phoneNum, setPhoneNum] = useState(shopInfo.phone);
@@ -315,12 +319,11 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                       <div className="flex items-center gap-3">
                         <strong className="text-blue-700 text-sm">{formatPrice(p.price)}</strong>
                         <button
-                          onClick={() => handleToggleSold(p.id)}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            p.isSold ? 'bg-gray-200 text-gray-700' : 'bg-emerald-100 text-emerald-800'
-                          }`}
+                          onClick={() => setPhoneToPrint(p)}
+                          className="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-[10px] font-bold flex items-center gap-1"
                         >
-                          {p.isSold ? 'Satıldı' : 'Yayında'}
+                          <Printer className="w-3 h-3 text-blue-600" />
+                          <span>Etiket Yazdır</span>
                         </button>
                       </div>
                     </div>
@@ -490,6 +493,14 @@ export default function AdminPortalPage({ onGoToStorefront }) {
                           <td className="py-2.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
+                                onClick={() => setPhoneToPrint(phone)}
+                                title="Mağaza Camı Etiketi Yazdır"
+                                className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-emerald-600 hover:text-white transition-colors"
+                              >
+                                <Printer className="w-4 h-4" />
+                              </button>
+
+                              <button
                                 onClick={() => handleOpenEditForm(phone)}
                                 title="Düzenle"
                                 className="p-1.5 rounded bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-colors"
@@ -614,7 +625,7 @@ export default function AdminPortalPage({ onGoToStorefront }) {
 
       </main>
 
-      {/* Nested Form Modal */}
+      {/* Form Modal */}
       {isFormOpen && (
         <PhoneFormModal
           phoneToEdit={phoneToEdit}
@@ -622,6 +633,14 @@ export default function AdminPortalPage({ onGoToStorefront }) {
           onSuccess={() => {
             loadPhones();
           }}
+        />
+      )}
+
+      {/* Printable Tag Modal */}
+      {phoneToPrint && (
+        <PrintPriceTagModal
+          phone={phoneToPrint}
+          onClose={() => setPhoneToPrint(null)}
         />
       )}
 

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Battery, ShieldCheck, HardDrive, Cpu, Eye, MessageSquare, ChevronRight } from 'lucide-react';
+import { Battery, ShieldCheck, HardDrive, Cpu, Eye, MessageSquare, ChevronRight, ArrowRightLeft, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function PhoneCard({ phone, onSelectPhone }) {
+export default function PhoneCard({ phone, onSelectPhone, isCompared, onToggleCompare }) {
   const { shopInfo } = useAuth();
 
   const formatPrice = (price) => {
@@ -20,10 +20,17 @@ export default function PhoneCard({ phone, onSelectPhone }) {
     window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleCompareClick = (e) => {
+    e.stopPropagation();
+    onToggleCompare(phone);
+  };
+
   return (
     <div
       onClick={() => onSelectPhone(phone)}
-      className="group bg-white rounded-lg border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all duration-150 cursor-pointer flex flex-col h-full relative"
+      className={`group bg-white rounded-lg border transition-all duration-150 cursor-pointer flex flex-col h-full relative ${
+        isCompared ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md' : 'border-gray-200 hover:border-blue-500 hover:shadow-md'
+      }`}
     >
       
       {/* Image Header Container */}
@@ -59,10 +66,23 @@ export default function PhoneCard({ phone, onSelectPhone }) {
             </span>
           )}
 
+          {/* Brand Badge */}
           <span className="px-2 py-0.5 rounded bg-gray-900/80 text-white text-[10px] font-bold">
             {phone.brand}
           </span>
         </div>
+
+        {/* Compare Checkbox Button on Image */}
+        <button
+          onClick={handleCompareClick}
+          className={`absolute bottom-2 left-2 z-10 px-2 py-0.5 rounded text-[10px] font-bold border transition-all flex items-center gap-1 ${
+            isCompared ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/90 text-gray-700 border-gray-200 hover:bg-gray-100'
+          }`}
+          title="Kıyaslamak için seç"
+        >
+          <ArrowRightLeft className="w-3 h-3" />
+          <span>{isCompared ? 'Kıyaslanıyor' : 'Kıyasla'}</span>
+        </button>
 
         {/* View Count Pill */}
         <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 text-[10px] text-gray-700 bg-white/90 px-1.5 py-0.5 rounded border border-gray-200">
@@ -116,6 +136,11 @@ export default function PhoneCard({ phone, onSelectPhone }) {
         {/* Footer: Price & Actions */}
         <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
           <div>
+            {phone.originalPrice && phone.originalPrice > phone.price && (
+              <span className="text-[10px] text-gray-400 line-through block font-semibold">
+                {formatPrice(phone.originalPrice)}
+              </span>
+            )}
             <span className="text-base font-extrabold text-blue-700 tracking-tight">
               {formatPrice(phone.price)}
             </span>

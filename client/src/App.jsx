@@ -5,8 +5,9 @@ import HeroSection from './components/HeroSection';
 import PhoneGrid from './components/PhoneGrid';
 import PhoneDetailModal from './components/PhoneDetailModal';
 import AdminLoginModal from './components/admin/AdminLoginModal';
-import AdminDashboardModal from './components/admin/AdminDashboardModal';
 import AdminPortalPage from './components/admin/AdminPortalPage';
+import CompareModal from './components/CompareModal';
+import TradeInModal from './components/TradeInModal';
 import Footer from './components/Footer';
 import { api } from './services/api';
 
@@ -18,6 +19,13 @@ function MainStoreContent() {
   
   // View mode: 'storefront' | 'admin-portal'
   const [viewMode, setViewMode] = useState('storefront');
+
+  // Comparison State
+  const [compareList, setCompareList] = useState([]);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+
+  // Trade In Modal State
+  const [isTradeInOpen, setIsTradeInOpen] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -58,7 +66,6 @@ function MainStoreContent() {
     return () => clearTimeout(timer);
   }, [fetchPhones]);
 
-  // If user opens admin panel modal, offer full page portal option
   useEffect(() => {
     if (isAdminOpen) {
       setViewMode('admin-portal');
@@ -74,7 +81,25 @@ function MainStoreContent() {
     setSort('newest');
   };
 
-  // If Admin Portal Mode is Active
+  const handleToggleCompare = (phone) => {
+    setCompareList(prev => {
+      const exists = prev.some(p => p.id === phone.id);
+      if (exists) {
+        return prev.filter(p => p.id !== phone.id);
+      } else {
+        if (prev.length >= 3) {
+          alert('En fazla 3 telefonu aynı anda karşılaştırabilirsiniz.');
+          return prev;
+        }
+        return [...prev, phone];
+      }
+    });
+  };
+
+  const handleRemoveFromCompare = (id) => {
+    setCompareList(prev => prev.filter(p => p.id !== id));
+  };
+
   if (isAdmin && viewMode === 'admin-portal') {
     return (
       <AdminPortalPage
@@ -88,10 +113,14 @@ function MainStoreContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-900">
+    <div className="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-900 font-sans selection:bg-blue-600 selection:text-white">
       
       <div>
-        <Navbar />
+        <Navbar
+          onOpenTradeIn={() => setIsTradeInOpen(true)}
+          compareCount={compareList.length}
+          onOpenCompare={() => setIsCompareModalOpen(true)}
+        />
 
         <main>
           <HeroSection
@@ -116,6 +145,8 @@ function MainStoreContent() {
             loading={loading}
             onSelectPhone={(phone) => setSelectedPhoneId(phone.id)}
             onResetFilters={handleResetFilters}
+            compareList={compareList}
+            onToggleCompare={handleToggleCompare}
           />
         </main>
       </div>
@@ -130,6 +161,23 @@ function MainStoreContent() {
             setSelectedPhoneId(null);
             fetchPhones();
           }}
+        />
+      )}
+
+      {/* Compare Modal */}
+      {isCompareModalOpen && (
+        <CompareModal
+          comparePhones={compareList}
+          onRemoveFromCompare={handleRemoveFromCompare}
+          onClose={() => setIsCompareModalOpen(false)}
+        />
+      )}
+
+      {/* Trade In Calculator Modal */}
+      {isTradeInOpen && (
+        <TradeInModal
+          phones={phones}
+          onClose={() => setIsTradeInOpen(false)}
         />
       )}
 

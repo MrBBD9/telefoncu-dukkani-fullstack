@@ -2,7 +2,14 @@ import React from 'react';
 import PhoneCard from './PhoneCard';
 import { Frown, RotateCcw } from 'lucide-react';
 
-export default function PhoneGrid({ phones, loading, onSelectPhone, onResetFilters }) {
+export default function PhoneGrid({
+  phones,
+  loading,
+  onSelectPhone,
+  onResetFilters,
+  compareList = [],
+  onToggleCompare
+}) {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -55,6 +62,8 @@ export default function PhoneGrid({ phones, loading, onSelectPhone, onResetFilte
             key={phone.id}
             phone={phone}
             onSelectPhone={onSelectPhone}
+            isCompared={compareList.some(p => p.id === phone.id)}
+            onToggleCompare={onToggleCompare}
           />
         ))}
       </div>

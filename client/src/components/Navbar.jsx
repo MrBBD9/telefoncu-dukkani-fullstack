@@ -1,8 +1,13 @@
 import React from 'react';
-import { Smartphone, ShieldCheck, Lock, LayoutDashboard, Phone, MessageSquare, LogOut } from 'lucide-react';
+import { Smartphone, ShieldCheck, Lock, LayoutDashboard, Phone, MessageSquare, LogOut, RefreshCw, ArrowRightLeft, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Navbar() {
+export default function Navbar({
+  onOpenTradeIn,
+  compareCount,
+  onOpenCompare,
+  favoriteCount
+}) {
   const { isAdmin, setIsAdminOpen, setIsLoginModalOpen, logout, shopInfo } = useAuth();
 
   const handleWhatsAppClick = () => {
@@ -13,16 +18,24 @@ export default function Navbar() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
       
-      {/* Top Mini Bar */}
+      {/* Top Mini Ticker Bar */}
       <div className="bg-gray-900 text-gray-200 py-1.5 px-4 text-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>{shopInfo.shopName} - Orijinal & Garantili İkinci El ve Sıfır Telefon Vitrini</span>
           </div>
-          <div className="hidden sm:flex items-center gap-4 text-[11px] text-gray-300">
-            <span>Çalışma Saatleri: 09:00 - 21:00</span>
-            <span>Konum: Kadıköy / İstanbul</span>
+          
+          <div className="flex items-center gap-4 text-[11px] text-gray-300">
+            <button
+              onClick={onOpenTradeIn}
+              className="flex items-center gap-1 text-emerald-400 font-bold hover:underline"
+            >
+              <RefreshCw className="w-3 h-3 animate-spin-slow" />
+              <span>Eski Telefonunu Sat / Takas Yap</span>
+            </button>
+            <span className="hidden sm:inline">|</span>
+            <span className="hidden sm:inline">Çalışma Saatleri: 09:00 - 21:00</span>
           </div>
         </div>
       </div>
@@ -43,26 +56,37 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right Actions */}
+        {/* Center & Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           
+          {/* Compare Counter Button */}
+          {compareCount > 0 && (
+            <button
+              onClick={onOpenCompare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold text-xs transition-colors"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 text-blue-600" />
+              <span>Karşılaştır ({compareCount})</span>
+            </button>
+          )}
+
+          {/* Trade In Button */}
+          <button
+            onClick={onOpenTradeIn}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-colors text-xs font-bold"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Takas Hesabı</span>
+          </button>
+
           {/* Quick WhatsApp */}
           <button
             onClick={handleWhatsAppClick}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-colors text-xs font-bold"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition-colors text-xs font-semibold"
           >
             <MessageSquare className="w-4 h-4 text-emerald-600" />
-            <span>WhatsApp İletişim</span>
+            <span>WhatsApp</span>
           </button>
-
-          {/* Quick Phone Call */}
-          <a
-            href={`tel:${shopInfo.phone.replace(/\s+/g, '')}`}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition-colors text-xs font-semibold"
-          >
-            <Phone className="w-4 h-4 text-gray-600" />
-            <span>{shopInfo.phone}</span>
-          </a>
 
           {/* Admin Panel Button */}
           {isAdmin ? (
