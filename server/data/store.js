@@ -1,0 +1,171 @@
+const fs = require('fs');
+const path = require('path');
+
+const DATA_DIR = path.join(__dirname);
+const PHONES_FILE = path.join(DATA_DIR, 'phones.json');
+const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Initial Seed Phones with high quality images and realistic Turkish descriptions
+const SEED_PHONES = [
+  {
+    id: "phone-1",
+    title: "iPhone 15 Pro Max 256GB Naturel Titanyum - Sıfır Ayarında Kutulu",
+    brand: "Apple",
+    model: "15 Pro Max",
+    price: 67500,
+    status: "İkinci El",
+    isSold: false,
+    storage: "256 GB",
+    ram: "8 GB",
+    color: "Naturel Titanyum",
+    batteryHealth: 99,
+    warrantyStatus: "18 Ay Apple Türkiye Garantili",
+    accessories: ["Orijinal Kutu", "Fatura", "Şarj Kablosu", "Hediye Kılıf & Cam"],
+    images: [
+      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1695048132832-b43560799616?auto=format&fit=crop&w=800&q=80"
+    ],
+    description: "Cihazımız Apple Türkiye çıkışlıdır. Çizik, vuruk, kılcal iz dahi yoktur. Pil sağlığı %99'dur. Kutusu, faturası ve tüm orijinal aksesuarları eksiksiz teslim edilecektir. Dükkanımızdan 3 ay mekanik garanti veriyoruz.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    views: 142
+  },
+  {
+    id: "phone-2",
+    title: "Samsung Galaxy S24 Ultra 512GB Titanyum Siyah - Sıfır Kapalı Kutu",
+    brand: "Samsung",
+    model: "Galaxy S24 Ultra",
+    price: 61900,
+    status: "Sıfır",
+    isSold: false,
+    storage: "512 GB",
+    ram: "12 GB",
+    color: "Titanyum Siyah",
+    batteryHealth: 100,
+    warrantyStatus: "2 Yıl Samsung Türkiye Garantili",
+    accessories: ["Kapalı Kutu", "Fatura"],
+    images: [
+      "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583573636246-18cb2246697f?auto=format&fit=crop&w=800&q=80"
+    ],
+    description: "Ambalajı açılmamış sıfır kapalı kutu ürün. Samsung Türkiye 2 yıl garantilidir. Adınıza faturalı teslim edilir. Galaxy AI yapay zeka özellikleri aktiftir.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+    views: 89
+  },
+  {
+    id: "phone-3",
+    title: "iPhone 13 128GB Yıldız Işığı - Pil %91 Temiz Kullanılmış",
+    brand: "Apple",
+    model: "iPhone 13",
+    price: 32500,
+    status: "İkinci El",
+    isSold: false,
+    storage: "128 GB",
+    ram: "4 GB",
+    color: "Yıldız Işığı",
+    batteryHealth: 91,
+    warrantyStatus: "Garantisi Bitti",
+    accessories: ["Orijinal Kutu", "Fatura", "Şarj Kablosu"],
+    images: [
+      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=800&q=80"
+    ],
+    description: "Cihazımızın değişeni, tamiri kesinlikle yoktur. Tüm aksamları (Face ID, TrueTone) aktif çalışmaktadır. Ekranda koruyucu kırılmaz cam vardır.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    views: 210
+  },
+  {
+    id: "phone-4",
+    title: "Xiaomi 13T Pro 512GB / 12GB RAM Siyah - Leica Kameralı",
+    brand: "Xiaomi",
+    model: "13T Pro",
+    price: 27900,
+    status: "Yenilenmiş",
+    isSold: false,
+    storage: "512 GB",
+    ram: "12 GB",
+    color: "Siyah",
+    batteryHealth: 96,
+    warrantyStatus: "6 Ay Mağaza Garantili",
+    accessories: ["120W Orijinal Hızlı Şarj", "Kılıf"],
+    images: [
+      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80"
+    ],
+    description: "Leica işbirliği kameralı, 120W süper hızlı şarj destekli amiral gemisi. Ekranı 144Hz AMOLED. Mağazamız tarafından bakımları yapılmış kusursuz ürün.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+    views: 115
+  },
+  {
+    id: "phone-5",
+    title: "iPhone 14 Pro 128GB Derin Mor - Kutu Fatura Tam",
+    brand: "Apple",
+    model: "14 Pro",
+    price: 49500,
+    status: "İkinci El",
+    isSold: true,
+    storage: "128 GB",
+    ram: "6 GB",
+    color: "Derin Mor",
+    batteryHealth: 88,
+    warrantyStatus: "Garantisi Bitti",
+    accessories: ["Orijinal Kutu", "Fatura", "Hızlı Şarj Adaptörü"],
+    images: [
+      "https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?auto=format&fit=crop&w=800&q=80"
+    ],
+    description: "Dinamik Ada (Dynamic Island) ve 48MP kameralı ikonik mor renk. Ekranında en ufak çizik dahi yoktur. Kılıf ile titizlikle kullanılmıştır.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
+    views: 340
+  }
+];
+
+const SEED_ADMIN = {
+  username: "admin",
+  // Simple MD5/sha or plain text comparison for simplicity, or hardcoded pass "admin123"
+  passwordHash: "admin123", // In production hash with bcrypt, plain check for simple local shop demo
+  shopName: "CepMarket Mobile",
+  phone: "0532 000 00 00",
+  whatsapp: "905320000000",
+  address: "Merkez Mah. Atatürk Cad. No:45/A, Kadıköy / İstanbul"
+};
+
+// Initialize JSON files if missing
+function initStore() {
+  if (!fs.existsSync(PHONES_FILE)) {
+    fs.writeFileSync(PHONES_FILE, JSON.stringify(SEED_PHONES, null, 2), 'utf-8');
+  }
+  if (!fs.existsSync(ADMIN_FILE)) {
+    fs.writeFileSync(ADMIN_FILE, JSON.stringify(SEED_ADMIN, null, 2), 'utf-8');
+  }
+}
+
+function getPhones() {
+  initStore();
+  const data = fs.readFileSync(PHONES_FILE, 'utf-8');
+  return JSON.parse(data);
+}
+
+function savePhones(phones) {
+  fs.writeFileSync(PHONES_FILE, JSON.stringify(phones, null, 2), 'utf-8');
+}
+
+function getAdmin() {
+  initStore();
+  const data = fs.readFileSync(ADMIN_FILE, 'utf-8');
+  return JSON.parse(data);
+}
+
+function saveAdmin(adminData) {
+  fs.writeFileSync(ADMIN_FILE, JSON.stringify(adminData, null, 2), 'utf-8');
+}
+
+module.exports = {
+  initStore,
+  getPhones,
+  savePhones,
+  getAdmin,
+  saveAdmin
+};
