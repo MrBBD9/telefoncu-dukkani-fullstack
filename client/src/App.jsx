@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import PhoneGrid from './components/PhoneGrid';
 import PhoneDetailModal from './components/PhoneDetailModal';
-import AdminLoginModal from './components/admin/AdminLoginModal';
+import AdminLoginPage from './components/admin/AdminLoginPage';
 import AdminPortalPage from './components/admin/AdminPortalPage';
 import CompareModal from './components/CompareModal';
 import TradeInModal from './components/TradeInModal';
@@ -13,7 +13,7 @@ import Footer from './components/Footer';
 import { api } from './services/api';
 
 function MainStoreContent() {
-  const { isAdmin, isAdminOpen, setIsAdminOpen, setIsLoginModalOpen } = useAuth();
+  const { isAdmin, setIsAdminOpen } = useAuth();
 
   const [phones, setPhones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ function MainStoreContent() {
   // Public tab: 'storefront' | 'shop-intro'
   const [activeTab, setActiveTab] = useState('storefront');
 
-  // View mode: 'storefront' | 'admin-portal'
+  // View mode: 'storefront' | 'secret-admin-login' | 'admin-portal'
   const [viewMode, setViewMode] = useState('storefront');
 
   // Comparison State
@@ -42,17 +42,19 @@ function MainStoreContent() {
   // Detail Modal
   const [selectedPhoneId, setSelectedPhoneId] = useState(null);
 
-  // SECRET LINK LISTENER: Listen for secret URL hash or path '#/patron-giris' or '/patron-giris'
+  // SECRET LINK ROUTER: Listen for secret URL hash or path '#/patron-giris' or '/patron-giris'
   useEffect(() => {
     const checkSecretRoute = () => {
       const hash = window.location.hash;
       const pathname = window.location.pathname;
       
-      if (hash === '#/patron-giris' || pathname === '/patron-giris' || hash === '#/admin' || pathname === '/admin') {
+      const isSecretRoute = hash === '#/patron-giris' || pathname === '/patron-giris' || hash === '#/admin' || pathname === '/admin';
+      
+      if (isSecretRoute) {
         if (isAdmin) {
           setViewMode('admin-portal');
         } else {
-          setIsLoginModalOpen(true);
+          setViewMode('secret-admin-login');
         }
       }
     };
@@ -60,7 +62,7 @@ function MainStoreContent() {
     checkSecretRoute();
     window.addEventListener('hashchange', checkSecretRoute);
     return () => window.removeEventListener('hashchange', checkSecretRoute);
-  }, [isAdmin, setIsLoginModalOpen]);
+  }, [isAdmin]);
 
   const fetchPhones = useCallback(async () => {
     setLoading(true);
@@ -90,12 +92,6 @@ function MainStoreContent() {
     return () => clearTimeout(timer);
   }, [fetchPhones]);
 
-  useEffect(() => {
-    if (isAdminOpen) {
-      setViewMode('admin-portal');
-    }
-  }, [isAdminOpen]);
-
   const handleResetFilters = () => {
     setSearch('');
     setSelectedBrand('Tümü');
@@ -124,8 +120,20 @@ function MainStoreContent() {
     setCompareList(prev => prev.filter(p => p.id !== id));
   };
 
-  // If Admin Portal Mode is Active
-  if (isAdmin && viewMode === 'admin-portal') {
+  // 1. STANDALONE SECRET ADMIN LOGIN PAGE
+  if (viewMode === 'secret-admin-login' && !isAdmin) {
+    return (
+      <AdminLoginPage
+        onGoToStorefront={() => {
+          setViewMode('storefront');
+          window.location.hash = '';
+        }}
+      />
+    );
+  }
+
+  // 2. STANDALONE FULL-PAGE ADMIN DASHBOARD PORTAL
+  if (isAdmin && (viewMode === 'admin-portal' || viewMode === 'secret-admin-login')) {
     return (
       <AdminPortalPage
         onGoToStorefront={() => {
@@ -138,6 +146,7 @@ function MainStoreContent() {
     );
   }
 
+  // 3. PUBLIC CUSTOMER STOREFRONT / SHOP INTRO
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-900 font-sans selection:bg-blue-600 selection:text-white">
       
@@ -217,9 +226,6 @@ function MainStoreContent() {
           onClose={() => setIsTradeInOpen(false)}
         />
       )}
-
-      {/* Admin Login Modal (Triggered by Secret URL) */}
-      <AdminLoginModal />
 
     </div>
   );
