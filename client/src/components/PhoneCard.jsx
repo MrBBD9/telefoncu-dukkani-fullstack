@@ -1,6 +1,7 @@
 import React from 'react';
-import { Battery, ShieldCheck, HardDrive, Cpu, Eye, MessageSquare, ChevronRight, ArrowRightLeft, Sparkles } from 'lucide-react';
+import { Battery, ShieldCheck, HardDrive, Cpu, Eye, MessageSquare, ChevronRight, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getImageUrl, DEFAULT_PHONE_IMAGE } from '../services/api';
 
 export default function PhoneCard({ phone, onSelectPhone, isCompared, onToggleCompare }) {
   const { shopInfo } = useAuth();
@@ -9,9 +10,8 @@ export default function PhoneCard({ phone, onSelectPhone, isCompared, onToggleCo
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(price);
   };
 
-  const mainImage = phone.images && phone.images.length > 0
-    ? phone.images[0]
-    : 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80';
+  const rawImage = phone.images && phone.images.length > 0 ? phone.images[0] : null;
+  const mainImage = getImageUrl(rawImage);
 
   const handleWhatsAppDirect = (e) => {
     e.stopPropagation();
@@ -43,7 +43,7 @@ export default function PhoneCard({ phone, onSelectPhone, isCompared, onToggleCo
           loading="lazy"
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80';
+            e.target.src = DEFAULT_PHONE_IMAGE;
           }}
         />
 
@@ -66,7 +66,6 @@ export default function PhoneCard({ phone, onSelectPhone, isCompared, onToggleCo
             </span>
           )}
 
-          {/* Brand Badge */}
           <span className="px-2 py-0.5 rounded bg-gray-900/80 text-white text-[10px] font-bold">
             {phone.brand}
           </span>

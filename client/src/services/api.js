@@ -1,7 +1,26 @@
 const API_BASE = 'http://localhost:5000/api';
+export const SERVER_HOST = 'http://localhost:5000';
+
+export const DEFAULT_PHONE_IMAGE = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80';
+
+export function getImageUrl(url) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return DEFAULT_PHONE_IMAGE;
+  }
+  const cleanUrl = url.trim();
+  if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:image/')) {
+    return cleanUrl;
+  }
+  if (cleanUrl.startsWith('/uploads/')) {
+    return `${SERVER_HOST}${cleanUrl}`;
+  }
+  if (cleanUrl.startsWith('uploads/')) {
+    return `${SERVER_HOST}/${cleanUrl}`;
+  }
+  return cleanUrl;
+}
 
 export const api = {
-  // Helper to get headers
   getHeaders() {
     const token = localStorage.getItem('phone_shop_token');
     return {
